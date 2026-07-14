@@ -1,0 +1,110 @@
+[
+  {
+    "id": "cam-001",
+    "title": "Camera app crash after rapid mode switching",
+    "device": "Galaxy S Series",
+    "area": "Camera",
+    "severity": "High",
+    "reproRate": 78,
+    "impactScope": "System"
+  },
+  {
+    "id": "bat-002",
+    "title": "Battery drains sharply during 5G standby",
+    "device": "Galaxy S Series",
+    "area": "Battery",
+    "severity": "High",
+    "reproRate": 71,
+    "impactScope": "App-wide"
+  },
+  {
+    "id": "conn-003",
+    "title": "Wi-Fi drops when switching between bands",
+    "device": "Galaxy Z Series",
+    "area": "Connectivity",
+    "severity": "High",
+    "reproRate": 82,
+    "impactScope": "Multi-device"
+  },
+  {
+    "id": "fold-004",
+    "title": "Cover screen flicker on fold transition",
+    "device": "Galaxy Z Series",
+    "area": "Foldable UX",
+    "severity": "Medium",
+    "reproRate": 72,
+    "impactScope": "Single-screen"
+  },
+  {
+    "id": "perf-005",
+    "title": "Home screen stutter after long uptime",
+    "device": "Galaxy A Series",
+    "area": "Performance",
+    "severity": "Medium",
+    "reproRate": 45,
+    "impactScope": "App-wide"
+  },
+  {
+    "id": "ui-006",
+    "title": "Dark mode contrast too low in settings",
+    "device": "Galaxy A Series",
+    "area": "UI",
+    "severity": "Low",
+    "reproRate": 55,
+    "impactScope": "App-wide"
+  },
+  {
+    "id": "cam-007",
+    "title": "Occasional blur in low-light selfie",
+    "device": "Galaxy S Series",
+    "area": "Camera",
+    "severity": "Low",
+    "reproRate": 30,
+    "impactScope": "Single-screen"
+  },
+  {
+    "id": "bat-008",
+    "title": "Charging status icon lags by a few seconds",
+    "device": "Galaxy Tab Series",
+    "area": "Battery",
+    "severity": "Low",
+    "reproRate": 42,
+    "impactScope": "Single-screen"
+  },
+  {
+    "id": "conn-009",
+    "title": "Bluetooth reconnect delay to earbuds",
+    "device": "Galaxy Watch Series",
+    "area": "Connectivity",
+    "severity": "Medium",
+    "reproRate": 38,
+    "impactScope": "App-wide"
+  },
+  {
+    "id": "fold-010",
+    "title": "Taskbar spacing off in flex mode",
+    "device": "Galaxy Z Series",
+    "area": "Foldable UX",
+    "severity": "Low",
+    "reproRate": 25,
+    "impactScope": "Single-screen"
+  },
+  {
+    "id": "perf-011",
+    "title": "System-wide slowdown after OTA update",
+    "device": "Galaxy S Series",
+    "area": "Performance",
+    "severity": "High",
+    "reproRate": 90,
+    "impactScope": "System"
+  },
+  {
+    "id": "ui-012",
+    "title": "Quick panel toggle label truncated",
+    "device": "Galaxy A Series",
+    "area": "UI",
+    "severity": "Low",
+    "reproRate": 15,
+    "impactScope": "Single-screen"
+  }
+]

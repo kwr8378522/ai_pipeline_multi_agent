@@ -1,0 +1,114 @@
+{
+  "task": "task_003",
+  "app": "Galaxy Device Issue Triage Console",
+  "note": "This file is the grading table. Do NOT modify it. Backend/Frontend implement until check_api / check_dom pass against these rules.",
+
+  "requiredIssueFields": ["id", "title", "device", "area", "severity", "reproRate", "impactScope"],
+  "allowedArea": ["Camera", "Battery", "Connectivity", "Foldable UX", "UI", "Performance"],
+  "allowedSeverity": ["High", "Medium", "Low"],
+  "allowedImpactScope": ["System", "Multi-device", "App-wide", "Single-screen"],
+
+  "requiredDomIds": [
+    "app",
+    "summary-p0",
+    "summary-p1",
+    "summary-p2",
+    "summary-review",
+    "filter-bar",
+    "issue-board",
+    "error-panel"
+  ],
+  "requiredFilters": [
+    "All", "P0", "P1", "P2",
+    "Camera", "Battery", "Connectivity", "Foldable UX", "UI", "Performance"
+  ],
+  "requiredApiCallsInAppJs": ["/api/issues", "/api/triage"],
+  "p0HighlightClass": "card-p0",
+
+  "priorityRules": {
+    "P0": [
+      "severity == High AND impactScope in [System, Multi-device]",
+      "OR reproRate >= 70 AND area in [Camera, Battery, Connectivity, Foldable UX]"
+    ],
+    "P1": [
+      "severity == Medium",
+      "OR reproRate >= 40",
+      "OR impactScope == App-wide"
+    ],
+    "P2": ["everything else"],
+    "requiredTests": [
+      "base = [Smoke]",
+      "add Regression if priority is P0 or P1",
+      "add Device Matrix if impactScope == Multi-device",
+      "add Camera Smoke if area == Camera",
+      "add Battery Drain if area == Battery",
+      "add Reconnect if area == Connectivity",
+      "add Foldable Layout if area == Foldable UX",
+      "keep unique, no duplicates"
+    ],
+    "ownerReview": [
+      "true if priority == P0",
+      "true if priority == P1 AND area in [Camera, Battery, Connectivity, Foldable UX]",
+      "false otherwise"
+    ],
+    "owner": {
+      "Camera": "Camera QA",
+      "Battery": "Power QA",
+      "Connectivity": "Connectivity QA",
+      "Foldable UX": "Foldable UX QA",
+      "Performance": "Performance QA",
+      "UI": "UX QA"
+    }
+  },
+
+  "apiCases": [
+    {
+      "name": "camera-system-p0",
+      "input": {"id": "cam-001", "area": "Camera", "severity": "High", "reproRate": 78, "impactScope": "System"},
+      "expect": {"priority": "P0", "requiredTests": ["Smoke", "Regression", "Camera Smoke"], "ownerReview": true, "owner": "Camera QA"}
+    },
+    {
+      "name": "connectivity-multidevice-p0",
+      "input": {"id": "conn-003", "area": "Connectivity", "severity": "High", "reproRate": 82, "impactScope": "Multi-device"},
+      "expect": {"priority": "P0", "requiredTests": ["Smoke", "Regression", "Device Matrix", "Reconnect"], "ownerReview": true, "owner": "Connectivity QA"}
+    },
+    {
+      "name": "foldable-reprorate-p0",
+      "input": {"id": "fold-004", "area": "Foldable UX", "severity": "Medium", "reproRate": 72, "impactScope": "Single-screen"},
+      "expect": {"priority": "P0", "requiredTests": ["Smoke", "Regression", "Foldable Layout"], "ownerReview": true, "owner": "Foldable UX QA"}
+    },
+    {
+      "name": "battery-reprorate-p1",
+      "input": {"id": "bat-008", "area": "Battery", "severity": "Low", "reproRate": 42, "impactScope": "Single-screen"},
+      "expect": {"priority": "P1", "requiredTests": ["Smoke", "Regression", "Battery Drain"], "ownerReview": true, "owner": "Power QA"}
+    },
+    {
+      "name": "performance-appwide-p1",
+      "input": {"id": "perf-005", "area": "Performance", "severity": "Medium", "reproRate": 45, "impactScope": "App-wide"},
+      "expect": {"priority": "P1", "requiredTests": ["Smoke", "Regression"], "ownerReview": false, "owner": "Performance QA"}
+    },
+    {
+      "name": "ui-low-p2",
+      "input": {"id": "ui-012", "area": "UI", "severity": "Low", "reproRate": 15, "impactScope": "Single-screen"},
+      "expect": {"priority": "P2", "requiredTests": ["Smoke"], "ownerReview": false, "owner": "UX QA"}
+    }
+  ],
+
+  "allowedFilesByRole": {
+    "backend": ["server.py", "docs/task_003/backend/report.md"],
+    "frontend": ["index.html", "src/app.js", "src/styles.css", "docs/task_003/frontend/report.md"],
+    "integration": ["docs/task_003/integration/report.md"],
+    "tester": ["docs/task_003/test/report.md", "docs/task_003/test/approval_draft.json", "docs/task_003/test/audit.json"]
+  },
+  "forbiddenFilesByRole": {
+    "backend": ["index.html", "src/app.js", "src/styles.css", "data/issues.json", "scripts/", "tasks/acceptance.json"],
+    "frontend": ["server.py", "data/issues.json", "scripts/", "tasks/acceptance.json"],
+    "integration": ["server.py", "index.html", "src/app.js", "src/styles.css", "data/issues.json", "scripts/", "tasks/acceptance.json"],
+    "tester": ["server.py", "index.html", "src/app.js", "src/styles.css", "data/issues.json", "scripts/", "tasks/acceptance.json"]
+  },
+
+  "implementationRiskPolicy": {
+    "LOW": "check_api PASS and check_dom PASS",
+    "HIGH": "any of check_api / check_dom FAIL"
+  }
+}

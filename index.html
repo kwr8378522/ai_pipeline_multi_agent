@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Galaxy Device Issue Triage Console</title>
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <!--
+    STARTER 골격입니다. UI 뼈대와 필수 DOM id는 들어 있지만,
+    카드 렌더링 / 필터 버튼 / summary 집계는 Frontend Agent가 완성해야 합니다.
+    현재 상태에서는 scripts/check_dom.py 가 FAIL 이어야 정상입니다.
+  -->
+  <div id="app">
+    <header class="topbar">
+      <h1>Galaxy Device Issue Triage Console</h1>
+      <p class="subtitle">디바이스 이슈를 우선순위(P0/P1/P2)로 분류하는 대시보드</p>
+    </header>
+
+    <section class="summary" aria-label="summary">
+      <div class="summary-tile">
+        <span class="summary-label">P0</span>
+        <span id="summary-p0" class="summary-value">-</span>
+      </div>
+      <div class="summary-tile">
+        <span class="summary-label">P1</span>
+        <span id="summary-p1" class="summary-value">-</span>
+      </div>
+      <div class="summary-tile">
+        <span class="summary-label">P2</span>
+        <span id="summary-p2" class="summary-value">-</span>
+      </div>
+      <div class="summary-tile">
+        <span class="summary-label">Owner Review</span>
+        <span id="summary-review" class="summary-value">-</span>
+      </div>
+    </section>
+
+    <!-- Frontend Agent: 여기에 필터 버튼(All/P0/P1/P2/영역별)을 채워 넣으세요. -->
+    <nav id="filter-bar" class="filter-bar" aria-label="filters"></nav>
+
+    <!-- Frontend Agent: 여기에 이슈 카드를 렌더링하세요. -->
+    <main id="issue-board" class="issue-board">
+      <p class="placeholder">아직 카드가 렌더링되지 않았습니다. (Frontend 미완성)</p>
+    </main>
+
+    <div id="error-panel" class="error-panel" role="alert"></div>
+  </div>
+
+  <script src="/src/app.js"></script>
+</body>
+</html>
