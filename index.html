@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>코드 변경 요청 기록기</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app-root" data-testid="app-root" class="app-root">
+    <h1>코드 변경 요청 기록기</h1>
+    <p class="subtitle">요청을 입력하고 우선순위 · 리뷰 여부 · 담당 역할 · 다음 액션을 직접 지정해 저장합니다.</p>
+
+    <form id="request-form" class="request-form" novalidate>
+      <div class="field">
+        <label for="request-text">코드 변경 요청 <span class="required">*</span></label>
+        <textarea id="request-text" data-testid="input-main" rows="3"
+                  placeholder="예: 결제 API 응답 지연 개선 필요"></textarea>
+      </div>
+
+      <fieldset class="field">
+        <legend>우선순위</legend>
+        <label><input type="radio" name="priority" value="P0"> P0</label>
+        <label><input type="radio" name="priority" value="P1"> P1</label>
+        <label><input type="radio" name="priority" value="P2" checked> P2</label>
+      </fieldset>
+
+      <div class="field field-inline">
+        <label><input type="checkbox" id="needs-review"> 리뷰 필요</label>
+      </div>
+
+      <div class="field">
+        <label for="role">담당 역할</label>
+        <select id="role">
+          <option value="Frontend">Frontend</option>
+          <option value="Backend">Backend</option>
+          <option value="QA">QA</option>
+          <option value="Infra">Infra</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="next-action">다음 액션</label>
+        <select id="next-action">
+          <option value="즉시 수정">즉시 수정</option>
+          <option value="리뷰 요청">리뷰 요청</option>
+          <option value="백로그 등록">백로그 등록</option>
+        </select>
+      </div>
+
+      <button type="submit" id="submit-btn" data-testid="submit-button">저장</button>
+      <p id="empty-hint" data-testid="status-message" class="empty-hint" hidden>
+        요청 텍스트를 입력해 주세요.
+      </p>
+    </form>
+
+    <section class="history">
+      <h2>저장된 요청 <span class="history-note">(최신순, 최대 20건)</span></h2>
+      <ul id="history-list" data-testid="result-list" class="history-list"></ul>
+    </section>
+  </main>
+
+  <!-- 로드 순서: storage.js → app.js -->
+  <script src="storage.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
