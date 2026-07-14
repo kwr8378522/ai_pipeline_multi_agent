@@ -1,0 +1,31 @@
+=== Practice 2 Test Run ===
+
+# validate-input.test.js
+  PASS  빈 문자열 "" → false (저장 거부)
+  PASS  공백만 "   " → false (저장 거부)
+  PASS  탭/개행만 → false
+  PASS  정상 텍스트 → true (통과)
+  PASS  비문자열(null) → false (방어)
+
+# build-record.test.js
+  PASS  사용자 선택값 재판정 없이 그대로 보존
+  PASS  P0/Backend/즉시 수정/리뷰 true 보존
+  PASS  P2/Frontend/백로그 등록/리뷰 false 보존
+  PASS  허용 안 된 priority "P9" → 거부(throw)
+  PASS  고정 목록 밖 role "Sales" → 거부(throw)
+  PASS  고정 목록 밖 nextAction "폐기" → 거부(throw)
+  PASS  needsReview 비boolean("yes") → 거부(throw)
+  PASS  빈 텍스트 → 거부(throw)
+
+# storage.test.js
+  PASS  빈 상태 조회 → [] (에러 아님)
+  PASS  1건 저장 후 조회 → 필드값 동일
+  PASS  다건 연속 저장 → 누적 + 최신순 정렬 유지
+  PASS  새로고침 시뮬레이션(별도 조회) → 데이터 유지
+  PASS  20건 초과 저장 → 최신 20건만 유지(오래된 것 잘림)
+  PASS  손상 JSON → 빈 배열 폴백(에러 아님)
+  PASS  배열 아닌 값 저장됨 → 빈 배열 폴백
+
+-----------------------------------
+total=20  passed=20  failed=0
+RESULT: PRACTICE2_TEST_PASS

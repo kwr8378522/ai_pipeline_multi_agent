@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Practice 2 Dashboard — worktree 구현·검증</title>
+<style>
+  :root {
+    --bg: #0f1420; --panel: #182131; --panel2: #1f2a3d; --line: #2b3852;
+    --txt: #e6ebf4; --muted: #93a0b8; --accent: #4f8cff;
+    --green: #3fb950; --amber: #e3a008; --red: #f2545b; --gray: #6b7688;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--txt);
+    font-family: "Segoe UI", "Malgun Gothic", system-ui, sans-serif; line-height: 1.55; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 20px 60px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; font-size: .9rem; }
+  h2 { font-size: 1.02rem; margin: 0 0 12px; letter-spacing: .01em; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 18px; }
+  .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+  .stat { background: var(--panel2); border: 1px solid var(--line); border-left-width: 5px;
+    border-radius: 10px; padding: 13px 15px; }
+  .stat .role { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .stat .val { font-size: 1.12rem; font-weight: 700; margin-top: 3px; }
+  .ok    { border-left-color: var(--green); } .ok .val    { color: var(--green); }
+  .warn  { border-left-color: var(--amber); } .warn .val  { color: var(--amber); }
+  .bad   { border-left-color: var(--red); }   .bad .val   { color: var(--red); }
+  .idle  { border-left-color: var(--gray); }  .idle .val  { color: var(--gray); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+  .card { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 15px 16px; }
+  .card h3 { margin: 0 0 10px; font-size: .96rem; display: flex; align-items: center; gap: 8px; }
+  .pill { font-size: .72rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+  .pill.ok { background: rgba(63,185,80,.16); color: var(--green); border: 1px solid rgba(63,185,80,.4); }
+  .pill.warn { background: rgba(227,160,8,.16); color: var(--amber); border: 1px solid rgba(227,160,8,.4); }
+  .pill.bad { background: rgba(242,84,91,.16); color: var(--red); border: 1px solid rgba(242,84,91,.4); }
+  .pill.idle { background: rgba(107,118,136,.16); color: var(--muted); border: 1px solid rgba(107,118,136,.4); }
+  ul { margin: 8px 0 0; padding-left: 18px; } li { margin: 3px 0; }
+  code { background: #0c111b; border: 1px solid var(--line); border-radius: 5px;
+    padding: 1px 6px; font-size: .84em; color: #cdd8ec; }
+  .muted { color: var(--muted); } .small { font-size: .85rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: .87rem; }
+  th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .chk { color: var(--green); } .checklist li { margin: 5px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Practice 2 — worktree 구현·검증 대시보드</h1>
+  <p class="sub">실습 1 계획서 → Builder 구현 → Tester 검증 → Main 리뷰 → 사람 merge · 생성 시각 2026-07-14</p>
+
+  <!-- 1) 전체 상태 -->
+  <section>
+    <h2>1 · 전체 상태</h2>
+    <div class="status-grid">
+      <div class="stat ok">   <div class="role">Builder</div>   <div class="val">DONE</div></div>
+      <div class="stat ok">   <div class="role">Tester</div>    <div class="val">PASS (20/20)</div></div>
+      <div class="stat ok">   <div class="role">Main Review</div><div class="val">APPROVE</div></div>
+      <div class="stat ok">   <div class="role">Merge</div>      <div class="val">MERGED (4e639cc)</div></div>
+    </div>
+  </section>
+
+  <!-- 2) 실습1 계획서 요약 -->
+  <section>
+    <h2>2 · 실습 1 계획서 요약 <span class="muted small">(05_mvp_implementation_plan.md)</span></h2>
+    <div class="cols">
+      <div class="card">
+        <h3>MVP 범위</h3>
+        <ul class="small">
+          <li>1페이지 웹앱: <b>수동 입력 폼 + localStorage 이력 목록 뷰어</b></li>
+          <li>텍스트(필수) + 우선순위 라디오(P0/P1/P2) + 리뷰 체크박스 + 역할/다음액션 select</li>
+          <li>빈 입력 저장 거부, 값 <b>가공 없이 그대로</b> 저장</li>
+          <li>최신순·최대 20건 복원 (새로고침 유지)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>제외 범위 &amp; 테스트 기준</h3>
+        <ul class="small">
+          <li class="muted">제외: 자동 분류·LLM/API·인증·알림·이력 삭제/초기화·DOM 자동 테스트</li>
+          <li>테스트: Node 내장 <code>assert</code>만 · 검증/값 보존/저장·조회 3영역</li>
+          <li>PASS 기준: 전 <code>assert</code> 통과 + exit 0, 로그 마지막 줄 <code>RESULT: PRACTICE2_TEST_PASS</code></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3~4) Builder / Tester -->
+  <div class="cols">
+    <section>
+      <h2>3 · Builder <span class="pill ok">DONE</span></h2>
+      <p class="small muted">worktree=builder_worktree · branch=practice2/builder · commit bab81f3</p>
+      <b class="small">구현 파일</b>
+      <ul class="small">
+        <li><code>index.html</code> — 입력 폼 + 이력 목록</li>
+        <li><code>storage.js</code> — 저장/조회(주입 가능, try/catch 폴백, 최신순·20건)</li>
+        <li><code>app.js</code> — 수집·검증·레코드·렌더·초기로드</li>
+        <li><code>styles.css</code> — 폼/목록 + 우선순위 색상</li>
+      </ul>
+      <p class="small">변경 요약: 4 files, +375 · 자동분류 classifier.js 폐기</p>
+      <p class="small">patch: <code>diffs/06_builder.patch</code></p>
+    </section>
+
+    <section>
+      <h2>4 · Tester <span class="pill ok">PASS</span></h2>
+      <p class="small muted">worktree=tester_worktree · branch=practice2/tester · commit 6961cd3</p>
+      <b class="small">실행 테스트 (20/20 PASS)</b>
+      <ul class="small">
+        <li><code>validate-input.test.js</code> — 5/5 (빈/공백/비문자열 거부)</li>
+        <li><code>build-record.test.js</code> — 8/8 (값 보존, 고정목록 밖 거부)</li>
+        <li><code>storage.test.js</code> — 7/7 (저장·최신순·20건·폴백)</li>
+      </ul>
+      <p class="small">실패 원인: <span class="chk">없음</span></p>
+      <p class="small">log: <code>logs/practice2_test.log</code> · patch: <code>diffs/07_tester.patch</code></p>
+    </section>
+  </div>
+
+  <!-- 5) Main Review -->
+  <section>
+    <h2>5 · Main Review <span class="pill ok">APPROVE</span></h2>
+    <p class="small muted">판단 근거: 테스트 PASS · 구현이 계획서와 일치 · 금지사항 위반 없음. 상세 <code>reports/08_main_review_report.md</code>. 최종 merge는 사람이 결정.</p>
+    <b class="small">사람이 merge 전 확인할 것</b>
+    <ul class="checklist small">
+      <li>브라우저에서 앱이 열리고 입력→저장→목록 흐름이 동작하는가</li>
+      <li><code>practice2_test.log</code> 마지막 줄이 <code>PRACTICE2_TEST_PASS</code> 인가</li>
+      <li><code>git diff main..practice2/builder</code> 가 계획서 범위 내인가</li>
+      <li>Tester가 앱 코드를 고치지 않았는가 (test/ 만 추가되었는가)</li>
+    </ul>
+  </section>
+
+  <!-- 6) Evidence -->
+  <section>
+    <h2>6 · Evidence 목록</h2>
+    <table>
+      <tr><th>증거</th><th>경로</th><th>상태</th></tr>
+      <tr><td>Builder 리포트</td><td><code>reports/06_builder_implementation_report.md</code></td><td class="chk">있음</td></tr>
+      <tr><td>Builder patch</td><td><code>diffs/06_builder.patch</code></td><td class="chk">있음</td></tr>
+      <tr><td>Tester 리포트</td><td><code>reports/07_tester_validation_report.md</code></td><td class="chk">있음</td></tr>
+      <tr><td>Test 로그</td><td><code>logs/practice2_test.log</code></td><td class="chk">PASS</td></tr>
+      <tr><td>Tester patch</td><td><code>diffs/07_tester.patch</code></td><td class="chk">있음</td></tr>
+      <tr><td>Main 리뷰 리포트</td><td><code>reports/08_main_review_report.md</code></td><td class="chk">있음 (APPROVE)</td></tr>
+    </table>
+  </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,399 @@
+diff --git a/app.js b/app.js
+new file mode 100644
+index 0000000..bdcb318
+--- /dev/null
++++ b/app.js
+@@ -0,0 +1,150 @@
++/**
++ * app.js — 폼 값 수집 · 입력 검증 · 레코드 생성 · 목록 렌더링 · 초기 로드
++ *
++ * 설계 원칙 (05 §6, 04 §4 반영):
++ *  - validateInput: 텍스트 필드만 필수 검증 (나머지는 UI 기본값 존재).
++ *  - buildEntry: 사용자가 고른 값을 재판정 없이 그대로 보존하되,
++ *    고정 목록(priority/role/nextAction) 밖의 값은 거부(throw). needsReview는 boolean.
++ *  - 사용자 입력은 innerHTML 이 아니라 textContent 로만 렌더 (XSS 방지).
++ *  - 순수 로직 함수는 Node 에서 require 해 단위 테스트 가능 (DOM 접근은 init 시점에만).
++ */
++(function (global) {
++  'use strict';
++
++  var PRIORITIES = ['P0', 'P1', 'P2'];
++  var ROLES = ['Frontend', 'Backend', 'QA', 'Infra'];
++  var NEXT_ACTIONS = ['즉시 수정', '리뷰 요청', '백로그 등록'];
++
++  // storage API 해석: 브라우저=window.AppStorage, Node=require('./storage.js')
++  var storageApi = (typeof module !== 'undefined' && module.exports)
++    ? require('./storage.js')
++    : global.AppStorage;
++
++  var idCounter = 0;
++  function makeId() {
++    idCounter += 1;
++    return Date.now().toString() + '-' + idCounter;
++  }
++
++  function validateInput(text) {
++    return typeof text === 'string' && text.trim().length > 0;
++  }
++
++  function buildEntry(formValues) {
++    var v = formValues || {};
++    if (!validateInput(v.text)) {
++      throw new Error('text is required');
++    }
++    if (PRIORITIES.indexOf(v.priority) === -1) {
++      throw new Error('invalid priority: ' + v.priority);
++    }
++    if (ROLES.indexOf(v.role) === -1) {
++      throw new Error('invalid role: ' + v.role);
++    }
++    if (NEXT_ACTIONS.indexOf(v.nextAction) === -1) {
++      throw new Error('invalid nextAction: ' + v.nextAction);
++    }
++    if (typeof v.needsReview !== 'boolean') {
++      throw new Error('needsReview must be boolean');
++    }
++    return {
++      id: makeId(),
++      text: v.text,
++      priority: v.priority,
++      needsReview: v.needsReview,
++      role: v.role,
++      nextAction: v.nextAction,
++      createdAt: new Date().toISOString()
++    };
++  }
++
++  function collectFormValues() {
++    var textEl = document.getElementById('request-text');
++    var priorityEl = document.querySelector('input[name="priority"]:checked');
++    var reviewEl = document.getElementById('needs-review');
++    var roleEl = document.getElementById('role');
++    var actionEl = document.getElementById('next-action');
++    return {
++      text: textEl ? textEl.value : '',
++      priority: priorityEl ? priorityEl.value : 'P2',
++      needsReview: reviewEl ? !!reviewEl.checked : false,
++      role: roleEl ? roleEl.value : 'Frontend',
++      nextAction: actionEl ? actionEl.value : '즉시 수정'
++    };
++  }
++
++  function renderHistoryList(entries) {
++    var list = document.getElementById('history-list');
++    if (!list) return;
++    list.textContent = '';
++    (entries || []).forEach(function (entry) {
++      var li = document.createElement('li');
++      li.className = 'history-item priority-' + String(entry.priority).toLowerCase();
++
++      var textDiv = document.createElement('div');
++      textDiv.className = 'item-text';
++      textDiv.textContent = entry.text; // 사용자 입력은 textContent 로만
++      li.appendChild(textDiv);
++
++      var meta = document.createElement('div');
++      meta.className = 'item-meta';
++      meta.textContent = [
++        entry.priority,
++        entry.needsReview ? '리뷰 필요' : '리뷰 불필요',
++        entry.role,
++        entry.nextAction
++      ].join(' · ');
++      li.appendChild(meta);
++
++      list.appendChild(li);
++    });
++  }
++
++  function handleSubmit(event) {
++    if (event && typeof event.preventDefault === 'function') event.preventDefault();
++    var values = collectFormValues();
++    var hint = document.getElementById('empty-hint');
++
++    if (!validateInput(values.text)) {
++      if (hint) hint.hidden = false; // 빈 입력: 저장하지 않고 안내만
++      return;
++    }
++    if (hint) hint.hidden = true;
++
++    var entry = buildEntry(values);
++    var entries = storageApi.addEntry(entry);
++    renderHistoryList(entries);
++
++    var textEl = document.getElementById('request-text');
++    if (textEl) textEl.value = ''; // 텍스트만 초기화 (나머지 선택값은 유지)
++  }
++
++  function init() {
++    var form = document.getElementById('request-form');
++    if (form) form.addEventListener('submit', handleSubmit);
++    renderHistoryList(storageApi.loadEntries());
++  }
++
++  var api = {
++    PRIORITIES: PRIORITIES,
++    ROLES: ROLES,
++    NEXT_ACTIONS: NEXT_ACTIONS,
++    validateInput: validateInput,
++    buildEntry: buildEntry,
++    collectFormValues: collectFormValues,
++    renderHistoryList: renderHistoryList,
++    handleSubmit: handleSubmit,
++    init: init
++  };
++
++  if (typeof module !== 'undefined' && module.exports) {
++    module.exports = api;
++  } else {
++    global.App = api;
++  }
++
++  // 브라우저에서만 자동 초기화 (Node require 시에는 실행하지 않음)
++  if (typeof document !== 'undefined') {
++    document.addEventListener('DOMContentLoaded', init);
++  }
++})(typeof window !== 'undefined' ? window : this);
+diff --git a/index.html b/index.html
+new file mode 100644
+index 0000000..d33c2c5
+--- /dev/null
++++ b/index.html
+@@ -0,0 +1,67 @@
++<!DOCTYPE html>
++<html lang="ko">
++<head>
++  <meta charset="UTF-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1.0">
++  <title>코드 변경 요청 기록기</title>
++  <link rel="stylesheet" href="styles.css">
++</head>
++<body>
++  <main id="app-root" data-testid="app-root" class="app-root">
++    <h1>코드 변경 요청 기록기</h1>
++    <p class="subtitle">요청을 입력하고 우선순위 · 리뷰 여부 · 담당 역할 · 다음 액션을 직접 지정해 저장합니다.</p>
++
++    <form id="request-form" class="request-form" novalidate>
++      <div class="field">
++        <label for="request-text">코드 변경 요청 <span class="required">*</span></label>
++        <textarea id="request-text" data-testid="input-main" rows="3"
++                  placeholder="예: 결제 API 응답 지연 개선 필요"></textarea>
++      </div>
++
++      <fieldset class="field">
++        <legend>우선순위</legend>
++        <label><input type="radio" name="priority" value="P0"> P0</label>
++        <label><input type="radio" name="priority" value="P1"> P1</label>
++        <label><input type="radio" name="priority" value="P2" checked> P2</label>
++      </fieldset>
++
++      <div class="field field-inline">
++        <label><input type="checkbox" id="needs-review"> 리뷰 필요</label>
++      </div>
++
++      <div class="field">
++        <label for="role">담당 역할</label>
++        <select id="role">
++          <option value="Frontend">Frontend</option>
++          <option value="Backend">Backend</option>
++          <option value="QA">QA</option>
++          <option value="Infra">Infra</option>
++        </select>
++      </div>
++
++      <div class="field">
++        <label for="next-action">다음 액션</label>
++        <select id="next-action">
++          <option value="즉시 수정">즉시 수정</option>
++          <option value="리뷰 요청">리뷰 요청</option>
++          <option value="백로그 등록">백로그 등록</option>
++        </select>
++      </div>
++
++      <button type="submit" id="submit-btn" data-testid="submit-button">저장</button>
++      <p id="empty-hint" data-testid="status-message" class="empty-hint" hidden>
++        요청 텍스트를 입력해 주세요.
++      </p>
++    </form>
++
++    <section class="history">
++      <h2>저장된 요청 <span class="history-note">(최신순, 최대 20건)</span></h2>
++      <ul id="history-list" data-testid="result-list" class="history-list"></ul>
++    </section>
++  </main>
++
++  <!-- 로드 순서: storage.js → app.js -->
++  <script src="storage.js"></script>
++  <script src="app.js"></script>
++</body>
++</html>
+diff --git a/storage.js b/storage.js
+new file mode 100644
+index 0000000..dde34fc
+--- /dev/null
++++ b/storage.js
+@@ -0,0 +1,77 @@
++/**
++ * storage.js — 코드 변경 요청 이력의 저장/조회 담당
++ *
++ * 설계 원칙 (05_mvp_implementation_plan.md §6, 04_builder_diff_plan.md 반영):
++ *  - storage 백엔드를 파라미터로 주입 가능 (기본값 window.localStorage).
++ *    → Tester가 { getItem, setItem } 형태의 순수 JS mock을 주입해 브라우저 없이 테스트 가능.
++ *  - loadEntries 는 try/catch + 빈 배열 폴백 (손상 JSON / 형식 불일치 방어).
++ *  - addEntry 는 최신순(createdAt 내림차순) 정렬 후 MAX_ENTRIES(20)건만 유지.
++ *  - DOM 의존 없음 → 단독 단위 테스트 가능.
++ *
++ * 브라우저에서는 <script>로 로드되어 window.AppStorage 로 노출되고,
++ * Node.js 에서는 require('./storage.js') 로 동일 API를 사용한다 (UMD 패턴).
++ */
++(function (global) {
++  'use strict';
++
++  var STORAGE_KEY = 'changeRequestEntries';
++  var MAX_ENTRIES = 20;
++
++  function resolveStorage(storage) {
++    if (storage) return storage;
++    if (typeof window !== 'undefined' && window.localStorage) return window.localStorage;
++    return null;
++  }
++
++  function loadEntries(storage) {
++    var backend = resolveStorage(storage);
++    if (!backend) return [];
++    try {
++      var raw = backend.getItem(STORAGE_KEY);
++      if (!raw) return [];
++      var parsed = JSON.parse(raw);
++      if (!Array.isArray(parsed)) return [];
++      return parsed;
++    } catch (e) {
++      // 손상 데이터(잘못된 JSON 등) → 에러 대신 빈 배열 폴백
++      return [];
++    }
++  }
++
++  function saveEntries(entries, storage) {
++    var backend = resolveStorage(storage);
++    if (!backend) return;
++    backend.setItem(STORAGE_KEY, JSON.stringify(entries || []));
++  }
++
++  function addEntry(entry, storage) {
++    var backend = resolveStorage(storage);
++    var entries = loadEntries(backend);
++    entries.push(entry);
++    entries.sort(function (a, b) {
++      // createdAt 내림차순 (최신이 앞)
++      var ca = a && a.createdAt ? a.createdAt : '';
++      var cb = b && b.createdAt ? b.createdAt : '';
++      if (ca < cb) return 1;
++      if (ca > cb) return -1;
++      return 0;
++    });
++    var sliced = entries.slice(0, MAX_ENTRIES);
++    saveEntries(sliced, backend);
++    return sliced;
++  }
++
++  var api = {
++    STORAGE_KEY: STORAGE_KEY,
++    MAX_ENTRIES: MAX_ENTRIES,
++    loadEntries: loadEntries,
++    saveEntries: saveEntries,
++    addEntry: addEntry
++  };
++
++  if (typeof module !== 'undefined' && module.exports) {
++    module.exports = api;
++  } else {
++    global.AppStorage = api;
++  }
++})(typeof window !== 'undefined' ? window : this);
+diff --git a/styles.css b/styles.css
+new file mode 100644
+index 0000000..4eedf13
+--- /dev/null
++++ b/styles.css
+@@ -0,0 +1,81 @@
++/* styles.css — 최소 가독성 스타일 (05 §4-5, 04 §2 반영) */
++
++* { box-sizing: border-box; }
++
++body {
++  margin: 0;
++  font-family: "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
++  background: #f4f5f7;
++  color: #1c1f26;
++  line-height: 1.5;
++}
++
++.app-root {
++  max-width: 640px;
++  margin: 32px auto;
++  padding: 24px;
++  background: #ffffff;
++  border-radius: 10px;
++  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
++}
++
++h1 { font-size: 1.4rem; margin: 0 0 4px; }
++.subtitle { margin: 0 0 20px; color: #5b6472; font-size: 0.9rem; }
++
++.request-form { display: flex; flex-direction: column; gap: 14px; }
++
++.field { display: flex; flex-direction: column; gap: 6px; }
++.field-inline { flex-direction: row; align-items: center; }
++.field label { font-weight: 600; font-size: 0.9rem; }
++.required { color: #d64545; }
++
++fieldset.field {
++  border: 1px solid #d9dde3;
++  border-radius: 8px;
++  padding: 10px 12px;
++}
++fieldset.field legend { font-weight: 600; font-size: 0.9rem; padding: 0 4px; }
++fieldset.field label { font-weight: 400; margin-right: 14px; }
++
++textarea, select {
++  width: 100%;
++  padding: 8px 10px;
++  border: 1px solid #c8cdd6;
++  border-radius: 6px;
++  font: inherit;
++}
++
++#submit-btn {
++  align-self: flex-start;
++  padding: 9px 20px;
++  border: none;
++  border-radius: 6px;
++  background: #2f6fed;
++  color: #fff;
++  font-weight: 600;
++  cursor: pointer;
++}
++#submit-btn:hover { background: #2559c9; }
++
++.empty-hint { margin: 0; color: #d64545; font-size: 0.88rem; font-weight: 600; }
++
++.history { margin-top: 28px; }
++.history h2 { font-size: 1.1rem; }
++.history-note { font-weight: 400; color: #8890a0; font-size: 0.82rem; }
++
++.history-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
++
++.history-item {
++  border: 1px solid #e2e6ec;
++  border-left-width: 5px;
++  border-radius: 8px;
++  padding: 12px 14px;
++  background: #fbfcfe;
++}
++.item-text { font-weight: 600; margin-bottom: 4px; white-space: pre-wrap; word-break: break-word; }
++.item-meta { color: #5b6472; font-size: 0.85rem; }
++
++/* 우선순위 색상 구분 */
++.priority-p0 { border-left-color: #d64545; }
++.priority-p1 { border-left-color: #e8a33d; }
++.priority-p2 { border-left-color: #4a9d5b; }

@@ -1,0 +1,253 @@
+diff --git a/test/build-record.test.js b/test/build-record.test.js
+new file mode 100644
+index 0000000..94c76c7
+--- /dev/null
++++ b/test/build-record.test.js
+@@ -0,0 +1,60 @@
++/**
++ * build-record.test.js — 값 보존 + 고정 목록 검증 (03 질문2·3·4, 05 §5)
++ * 대상: app.js 의 buildEntry(formValues)
++ * 핵심: 사용자가 고른 값을 재판정 없이 그대로 보존하되, 고정 목록 밖 값은 거부.
++ */
++'use strict';
++var assert = require('node:assert');
++var App = require('../app.js');
++
++function valid(over) {
++  return Object.assign({
++    text: '결제 API 응답 지연 개선 필요',
++    priority: 'P1',
++    needsReview: true,
++    role: 'Backend',
++    nextAction: '리뷰 요청'
++  }, over || {});
++}
++
++module.exports = [
++  { name: '사용자 선택값 재판정 없이 그대로 보존', fn: function () {
++    var e = App.buildEntry(valid());
++    assert.strictEqual(e.text, '결제 API 응답 지연 개선 필요');
++    assert.strictEqual(e.priority, 'P1');
++    assert.strictEqual(e.needsReview, true);
++    assert.strictEqual(e.role, 'Backend');
++    assert.strictEqual(e.nextAction, '리뷰 요청');
++    assert.ok(typeof e.id === 'string' && e.id.length > 0, 'id 부여');
++    assert.ok(typeof e.createdAt === 'string' && e.createdAt.length > 0, 'createdAt 부여');
++  }},
++  { name: 'P0/Backend/즉시 수정/리뷰 true 보존', fn: function () {
++    var e = App.buildEntry(valid({ text: '운영 서버 로그인 장애 긴급 수정', priority: 'P0', needsReview: true, role: 'Backend', nextAction: '즉시 수정' }));
++    assert.strictEqual(e.priority, 'P0');
++    assert.strictEqual(e.role, 'Backend');
++    assert.strictEqual(e.nextAction, '즉시 수정');
++    assert.strictEqual(e.needsReview, true);
++  }},
++  { name: 'P2/Frontend/백로그 등록/리뷰 false 보존', fn: function () {
++    var e = App.buildEntry(valid({ text: '버튼 색상 오타 수정', priority: 'P2', needsReview: false, role: 'Frontend', nextAction: '백로그 등록' }));
++    assert.strictEqual(e.priority, 'P2');
++    assert.strictEqual(e.role, 'Frontend');
++    assert.strictEqual(e.nextAction, '백로그 등록');
++    assert.strictEqual(e.needsReview, false);
++  }},
++  { name: '허용 안 된 priority "P9" → 거부(throw)', fn: function () {
++    assert.throws(function () { App.buildEntry(valid({ priority: 'P9' })); });
++  }},
++  { name: '고정 목록 밖 role "Sales" → 거부(throw)', fn: function () {
++    assert.throws(function () { App.buildEntry(valid({ role: 'Sales' })); });
++  }},
++  { name: '고정 목록 밖 nextAction "폐기" → 거부(throw)', fn: function () {
++    assert.throws(function () { App.buildEntry(valid({ nextAction: '폐기' })); });
++  }},
++  { name: 'needsReview 비boolean("yes") → 거부(throw)', fn: function () {
++    assert.throws(function () { App.buildEntry(valid({ needsReview: 'yes' })); });
++  }},
++  { name: '빈 텍스트 → 거부(throw)', fn: function () {
++    assert.throws(function () { App.buildEntry(valid({ text: '   ' })); });
++  }}
++];
+diff --git a/test/run-tests.js b/test/run-tests.js
+new file mode 100644
+index 0000000..643ee6c
+--- /dev/null
++++ b/test/run-tests.js
+@@ -0,0 +1,59 @@
++/**
++ * run-tests.js — 3개 테스트 스위트를 실행하고 결과를 집계한다.
++ * 로그: ../../agent_shared/logs/practice2_test.log (공용 증거함, 저장소 밖 형제 위치)
++ * 마지막 줄: RESULT: PRACTICE2_TEST_PASS 또는 RESULT: PRACTICE2_TEST_FAIL
++ * 외부 npm 없음 (node:fs, node:path, node:assert 내장 모듈만).
++ */
++'use strict';
++var fs = require('node:fs');
++var path = require('node:path');
++
++var suites = [
++  ['validate-input', require('./validate-input.test.js')],
++  ['build-record', require('./build-record.test.js')],
++  ['storage', require('./storage.test.js')]
++];
++
++var lines = [];
++function log(s) { lines.push(s); }
++
++log('=== Practice 2 Test Run ===');
++var total = 0, passed = 0, failed = 0;
++
++suites.forEach(function (pair) {
++  var suiteName = pair[0];
++  var cases = pair[1];
++  log('');
++  log('# ' + suiteName + '.test.js');
++  cases.forEach(function (c) {
++    total += 1;
++    try {
++      c.fn();
++      passed += 1;
++      log('  PASS  ' + c.name);
++    } catch (e) {
++      failed += 1;
++      log('  FAIL  ' + c.name + '  ->  ' + (e && e.message ? e.message : String(e)));
++    }
++  });
++});
++
++log('');
++log('-----------------------------------');
++log('total=' + total + '  passed=' + passed + '  failed=' + failed);
++var result = failed === 0 ? 'RESULT: PRACTICE2_TEST_PASS' : 'RESULT: PRACTICE2_TEST_FAIL';
++log(result);
++
++var out = lines.join('\n') + '\n';
++process.stdout.write(out);
++
++// 공용 증거함에 로그 저장 (tester_worktree/test → ../../agent_shared)
++try {
++  var logDir = path.resolve(__dirname, '..', '..', 'agent_shared', 'logs');
++  fs.mkdirSync(logDir, { recursive: true });
++  fs.writeFileSync(path.join(logDir, 'practice2_test.log'), out, 'utf8');
++} catch (e) {
++  process.stderr.write('로그 저장 실패: ' + e.message + '\n');
++}
++
++process.exitCode = failed === 0 ? 0 : 1;
+diff --git a/test/storage.test.js b/test/storage.test.js
+new file mode 100644
+index 0000000..a96e480
+--- /dev/null
++++ b/test/storage.test.js
+@@ -0,0 +1,84 @@
++/**
++ * storage.test.js — localStorage 저장/조회 (03 질문5, 05 §5)
++ * 대상: storage.js 의 loadEntries / saveEntries / addEntry
++ * 방식: 순수 JS in-memory mock({getItem,setItem})을 주입해 브라우저 없이 검증.
++ */
++'use strict';
++var assert = require('node:assert');
++var Storage = require('../storage.js');
++
++function createMockStorage(seed) {
++  var store = Object.assign({}, seed);
++  return {
++    getItem: function (k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; },
++    setItem: function (k, v) { store[k] = String(v); }
++  };
++}
++
++function entry(text, createdAt, over) {
++  return Object.assign({
++    id: text + '-' + createdAt,
++    text: text,
++    priority: 'P2',
++    needsReview: false,
++    role: 'Frontend',
++    nextAction: '즉시 수정',
++    createdAt: createdAt
++  }, over || {});
++}
++
++module.exports = [
++  { name: '빈 상태 조회 → [] (에러 아님)', fn: function () {
++    var s = createMockStorage();
++    assert.deepStrictEqual(Storage.loadEntries(s), []);
++  }},
++  { name: '1건 저장 후 조회 → 필드값 동일', fn: function () {
++    var s = createMockStorage();
++    Storage.addEntry(entry('결제 API 지연', '2026-07-14T00:00:01.000Z', { priority: 'P1', needsReview: true, role: 'Backend', nextAction: '리뷰 요청' }), s);
++    var got = Storage.loadEntries(s);
++    assert.strictEqual(got.length, 1);
++    assert.strictEqual(got[0].text, '결제 API 지연');
++    assert.strictEqual(got[0].priority, 'P1');
++    assert.strictEqual(got[0].needsReview, true);
++    assert.strictEqual(got[0].role, 'Backend');
++    assert.strictEqual(got[0].nextAction, '리뷰 요청');
++  }},
++  { name: '다건 연속 저장 → 누적 + 최신순 정렬 유지', fn: function () {
++    var s = createMockStorage();
++    Storage.addEntry(entry('old', '2026-07-14T00:00:01.000Z'), s);
++    Storage.addEntry(entry('new', '2026-07-14T00:00:02.000Z'), s);
++    var got = Storage.loadEntries(s);
++    assert.strictEqual(got.length, 2);
++    assert.strictEqual(got[0].text, 'new'); // 최신이 앞
++    assert.strictEqual(got[1].text, 'old');
++  }},
++  { name: '새로고침 시뮬레이션(별도 조회) → 데이터 유지', fn: function () {
++    var s = createMockStorage();
++    Storage.addEntry(entry('persist', '2026-07-14T00:00:01.000Z'), s);
++    var again = Storage.loadEntries(s); // 저장 후 새 조회 호출
++    assert.strictEqual(again.length, 1);
++    assert.strictEqual(again[0].text, 'persist');
++  }},
++  { name: '20건 초과 저장 → 최신 20건만 유지(오래된 것 잘림)', fn: function () {
++    var s = createMockStorage();
++    for (var i = 1; i <= 25; i++) {
++      var ca = '2026-07-14T00:00:' + String(i).padStart(2, '0') + '.000Z';
++      Storage.addEntry(entry('e' + i, ca), s);
++    }
++    var got = Storage.loadEntries(s);
++    assert.strictEqual(got.length, 20);
++    assert.strictEqual(got[0].text, 'e25'); // 최신
++    var texts = got.map(function (x) { return x.text; });
++    assert.ok(texts.indexOf('e1') === -1, 'e1(가장 오래된) 잘림');
++    assert.ok(texts.indexOf('e5') === -1, 'e5 잘림');
++    assert.ok(texts.indexOf('e6') !== -1, 'e6 유지');
++  }},
++  { name: '손상 JSON → 빈 배열 폴백(에러 아님)', fn: function () {
++    var s = createMockStorage({ changeRequestEntries: '{not valid json' });
++    assert.deepStrictEqual(Storage.loadEntries(s), []);
++  }},
++  { name: '배열 아닌 값 저장됨 → 빈 배열 폴백', fn: function () {
++    var s = createMockStorage({ changeRequestEntries: '{"a":1}' });
++    assert.deepStrictEqual(Storage.loadEntries(s), []);
++  }}
++];
+diff --git a/test/validate-input.test.js b/test/validate-input.test.js
+new file mode 100644
+index 0000000..eba7ca2
+--- /dev/null
++++ b/test/validate-input.test.js
+@@ -0,0 +1,26 @@
++/**
++ * validate-input.test.js — 빈 입력 검증 로직 (03 질문1, 05 §5)
++ * 대상: app.js 의 validateInput(text)
++ * Node 내장 assert 만 사용, 외부 npm 없음.
++ */
++'use strict';
++var assert = require('node:assert');
++var App = require('../app.js');
++
++module.exports = [
++  { name: '빈 문자열 "" → false (저장 거부)', fn: function () {
++    assert.strictEqual(App.validateInput(''), false);
++  }},
++  { name: '공백만 "   " → false (저장 거부)', fn: function () {
++    assert.strictEqual(App.validateInput('   '), false);
++  }},
++  { name: '탭/개행만 → false', fn: function () {
++    assert.strictEqual(App.validateInput('\t\n '), false);
++  }},
++  { name: '정상 텍스트 → true (통과)', fn: function () {
++    assert.strictEqual(App.validateInput('결제 API 응답 지연 개선 필요'), true);
++  }},
++  { name: '비문자열(null) → false (방어)', fn: function () {
++    assert.strictEqual(App.validateInput(null), false);
++  }}
++];
