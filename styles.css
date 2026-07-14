@@ -1,0 +1,81 @@
+/* styles.css — 최소 가독성 스타일 (05 §4-5, 04 §2 반영) */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+  background: #f4f5f7;
+  color: #1c1f26;
+  line-height: 1.5;
+}
+
+.app-root {
+  max-width: 640px;
+  margin: 32px auto;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+h1 { font-size: 1.4rem; margin: 0 0 4px; }
+.subtitle { margin: 0 0 20px; color: #5b6472; font-size: 0.9rem; }
+
+.request-form { display: flex; flex-direction: column; gap: 14px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-inline { flex-direction: row; align-items: center; }
+.field label { font-weight: 600; font-size: 0.9rem; }
+.required { color: #d64545; }
+
+fieldset.field {
+  border: 1px solid #d9dde3;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+fieldset.field legend { font-weight: 600; font-size: 0.9rem; padding: 0 4px; }
+fieldset.field label { font-weight: 400; margin-right: 14px; }
+
+textarea, select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #c8cdd6;
+  border-radius: 6px;
+  font: inherit;
+}
+
+#submit-btn {
+  align-self: flex-start;
+  padding: 9px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #2f6fed;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+#submit-btn:hover { background: #2559c9; }
+
+.empty-hint { margin: 0; color: #d64545; font-size: 0.88rem; font-weight: 600; }
+
+.history { margin-top: 28px; }
+.history h2 { font-size: 1.1rem; }
+.history-note { font-weight: 400; color: #8890a0; font-size: 0.82rem; }
+
+.history-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+
+.history-item {
+  border: 1px solid #e2e6ec;
+  border-left-width: 5px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+.item-text { font-weight: 600; margin-bottom: 4px; white-space: pre-wrap; word-break: break-word; }
+.item-meta { color: #5b6472; font-size: 0.85rem; }
+
+/* 우선순위 색상 구분 */
+.priority-p0 { border-left-color: #d64545; }
+.priority-p1 { border-left-color: #e8a33d; }
+.priority-p2 { border-left-color: #4a9d5b; }
