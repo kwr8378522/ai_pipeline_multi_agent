@@ -1,0 +1,27 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "teammateMode": "auto",
+  "model": "opusplan",
+  "language": "korean",
+  "showClearContextOnPlanAccept": true,
+  "plansDirectory": "plans",
+  "permissions": {
+    "additionalDirectories": [
+        "../agent_shared"
+    ],
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Bash(node scripts/init-practice1.js)",
+      "Bash(node scripts/status.js)",
+      "Bash(node scripts/update-board.js:*)",
+      "Bash(node scripts/trace.js:*)",
+      "Bash(node scripts/validate-starter-kit.js)",
+      "Bash(node scripts/validate-practice1.js)",
+      "Bash(node scripts/render-dashboard.js)"
+    ]
+  }
+}

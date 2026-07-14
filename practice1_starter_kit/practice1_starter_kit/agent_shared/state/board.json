@@ -1,0 +1,16 @@
+{
+  "feature_idea": "코드 변경 요청을 입력하면 우선순위 P0/P1/P2, 리뷰 필요 여부, 담당 역할, 다음 액션을 보여주는 1페이지 웹앱",
+  "updated_at": "2026-07-14T02:04:59.852Z",
+  "stages": {
+    "setup": "done",
+    "agent_creation": "done",
+    "research_agent": "done",
+    "reviewer_agent": "done",
+    "test_agent": "done",
+    "test_answers": "done",
+    "builder_agent": "done",
+    "synthesis": "done",
+    "final_plan": "done",
+    "validation": "done"
+  }
+}
