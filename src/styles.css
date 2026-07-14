@@ -70,9 +70,64 @@ body {
   min-height: 20px;
 }
 
-/* TODO(Frontend Agent):
- *   - 이슈 카드 기본 스타일
- *   - P0 카드 강조용 클래스 (클래스명은 tasks/acceptance.json 의 p0HighlightClass 값 사용)
- *   - 필터 버튼 스타일
- *   check_dom.py 는 위 P0 강조 클래스 선택자가 이 파일에 있는지 확인합니다.
- */
+/* ---- filter buttons ---- */
+.filter-btn {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.filter-btn:hover { border-color: var(--p2); }
+.filter-btn.active {
+  background: var(--p2);
+  border-color: var(--p2);
+  color: #06122a;
+  font-weight: 700;
+}
+
+/* ---- issue cards ---- */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card.priority-p0 { border-left-color: var(--p0); }
+.card.priority-p1 { border-left-color: var(--p1); }
+.card.priority-p2 { border-left-color: var(--p2); }
+
+/* P0 강조 (check_dom.py 가 .card-p0 선택자 존재를 확인) */
+.card-p0 {
+  border-color: var(--p0);
+  box-shadow: 0 0 0 1px var(--p0), 0 6px 20px rgba(255, 90, 110, 0.18);
+  background: linear-gradient(180deg, rgba(255, 90, 110, 0.10), var(--panel));
+}
+
+.card-head { display: flex; align-items: center; justify-content: space-between; }
+.badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  color: #06122a;
+}
+.badge-p0 { background: var(--p0); }
+.badge-p1 { background: var(--p1); }
+.badge-p2 { background: var(--p2); }
+.card-area { color: var(--muted); font-size: 13px; }
+
+.card-title { margin: 0; font-size: 16px; }
+.card-device { color: var(--muted); font-size: 13px; }
+
+.card-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: var(--muted); }
+
+.card-tests { font-size: 13px; }
+.card-owner { font-size: 13px; color: var(--muted); }
+.card-owner.owner-review { color: var(--p1); font-weight: 600; }

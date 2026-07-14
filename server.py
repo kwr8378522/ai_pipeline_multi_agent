@@ -48,20 +48,78 @@ OWNER_BY_AREA = {
 
 
 def classify_issue(issue):
-    """STARTER STUB - intentionally incomplete.
+    """Classify one issue per tasks/acceptance.json (single source of truth).
 
-    Backend Agent (task_003_backend) must implement the full rules described
-    in tasks/acceptance.json so that scripts/check_api.py passes.
-    Right now every issue is forced to P2 with the minimum fields, so the
-    API check is expected to FAIL until this function is completed.
+    priority:
+      P0: severity == High AND impactScope in {System, Multi-device}
+          OR reproRate >= 70 AND area in critical areas
+      P1: severity == Medium OR reproRate >= 40 OR impactScope == App-wide
+      P2: everything else
+    requiredTests: base [Smoke]; +Regression for P0/P1; +Device Matrix for
+      Multi-device; +area-specific test; unique, order preserved.
+    ownerReview: True for P0, or P1 in a critical area; else False.
+    owner: mapped from area (always set).
     """
+    area = issue.get("area")
+    severity = issue.get("severity")
+    impact = issue.get("impactScope")
+    try:
+        repro = float(issue.get("reproRate"))
+    except (TypeError, ValueError):
+        repro = 0.0
+
+    reasons = []
+
+    # --- priority ---
+    if severity == "High" and impact in ("System", "Multi-device"):
+        priority = "P0"
+        reasons.append("severity=High with impactScope=%s -> P0" % impact)
+    elif repro >= 70 and area in CRITICAL_AREAS:
+        priority = "P0"
+        reasons.append("reproRate=%g >= 70 in critical area '%s' -> P0" % (repro, area))
+    elif severity == "Medium" or repro >= 40 or impact == "App-wide":
+        priority = "P1"
+        reasons.append("severity=Medium / reproRate>=40 / impactScope=App-wide -> P1")
+    else:
+        priority = "P2"
+        reasons.append("no P0/P1 rule matched -> P2")
+
+    # --- requiredTests (base + priority + impact + area), unique & ordered ---
+    tests = ["Smoke"]
+    if priority in ("P0", "P1"):
+        tests.append("Regression")
+    if impact == "Multi-device":
+        tests.append("Device Matrix")
+    area_test = {
+        "Camera": "Camera Smoke",
+        "Battery": "Battery Drain",
+        "Connectivity": "Reconnect",
+        "Foldable UX": "Foldable Layout",
+    }.get(area)
+    if area_test:
+        tests.append(area_test)
+    seen = set()
+    required_tests = []
+    for t in tests:
+        if t not in seen:
+            seen.add(t)
+            required_tests.append(t)
+
+    # --- ownerReview ---
+    if priority == "P0":
+        owner_review = True
+    elif priority == "P1" and area in CRITICAL_AREAS:
+        owner_review = True
+    else:
+        owner_review = False
+
     return {
         "id": issue.get("id"),
-        "priority": "P2",
-        "requiredTests": ["Smoke"],
-        "ownerReview": False,
-        "owner": "",
-        "reasons": ["TODO: classify_issue is not implemented yet"],
+        "priority": priority,
+        "requiredTests": required_tests,
+        "ownerReview": owner_review,
+        "owner": OWNER_BY_AREA.get(area, ""),
+        "reasons": reasons,
     }
 
 
